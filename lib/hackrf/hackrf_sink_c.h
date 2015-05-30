@@ -137,6 +137,7 @@ private:
   char *_buf;
   unsigned int _buf_num;
   unsigned int _buf_used;
+  bool _stopping;
   boost::mutex _buf_mutex;
   boost::condition_variable _buf_cond;
 
