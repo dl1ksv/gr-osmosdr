@@ -61,9 +61,6 @@ using namespace boost::assign;
 #define HACKRF_FUNC_STR(func, arg) \
   boost::str(boost::format(func "(%d)") % arg) + " has failed"
 
-int hackrf_source_c::_usage = 0;
-boost::mutex hackrf_source_c::_usage_mutex;
-
 hackrf_source_c_sptr make_hackrf_source_c (const std::string & args)
 {
   return gnuradio::get_initial_sptr(new hackrf_source_c (args));
@@ -133,12 +130,12 @@ hackrf_source_c::hackrf_source_c (const std::string &args)
   }
 
   {
-    boost::mutex::scoped_lock lock( _usage_mutex );
+    boost::mutex::scoped_lock lock( hackrf_common::_usage_mutex );
 
-    if ( _usage == 0 )
+    if ( hackrf_common::_usage == 0 )
       hackrf_init(); /* call only once before the first open */
 
-    _usage++;
+    hackrf_common::_usage++;
   }
 
   _dev = NULL;
@@ -214,11 +211,11 @@ hackrf_source_c::~hackrf_source_c ()
     _dev = NULL;
 
     {
-      boost::mutex::scoped_lock lock( _usage_mutex );
+      boost::mutex::scoped_lock lock( hackrf_common::_usage_mutex );
 
-       _usage--;
+       hackrf_common::_usage--;
 
-      if ( _usage == 0 )
+      if ( hackrf_common::_usage == 0 )
         hackrf_exit(); /* call only once after last close */
     }
   }
@@ -350,65 +347,7 @@ int hackrf_source_c::work( int noutput_items,
 
 std::vector<std::string> hackrf_source_c::get_devices()
 {
-  std::vector<std::string> devices;
-  std::string label;
-#if 0
-  for (unsigned int i = 0; i < 1 /* TODO: missing libhackrf api */; i++) {
-    std::string args = "hackrf=" + boost::lexical_cast< std::string >( i );
-
-    label.clear();
-
-    label = "HackRF Jawbreaker"; /* TODO: missing libhackrf api */
-
-    boost::algorithm::trim(label);
-
-    args += ",label='" + label + "'";
-    devices.push_back( args );
-  }
-#else
-
-  {
-    boost::mutex::scoped_lock lock( _usage_mutex );
-
-    if ( _usage == 0 )
-      hackrf_init(); /* call only once before the first open */
-
-    _usage++;
-  }
-
-  int ret;
-  hackrf_device *dev = NULL;
-  ret = hackrf_open(&dev);
-  if ( HACKRF_SUCCESS == ret )
-  {
-    std::string args = "hackrf=0";
-
-    label = "HackRF";
-
-    uint8_t board_id;
-    ret = hackrf_board_id_read( dev, &board_id );
-    if ( HACKRF_SUCCESS == ret )
-    {
-      label += std::string(" ") + hackrf_board_id_name(hackrf_board_id(board_id));
-    }
-
-    args += ",label='" + label + "'";
-    devices.push_back( args );
-
-    ret = hackrf_close(dev);
-  }
-
-  {
-    boost::mutex::scoped_lock lock( _usage_mutex );
-
-     _usage--;
-
-    if ( _usage == 0 )
-      hackrf_exit(); /* call only once after last close */
-  }
-
-#endif
-  return devices;
+  return hackrf_common::devices();
 }
 
 size_t hackrf_source_c::get_num_channels()

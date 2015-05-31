@@ -31,6 +31,7 @@
 #include <libhackrf/hackrf.h>
 
 #include "source_iface.h"
+#include "hackrf_common.h"
 
 class hackrf_source_c;
 
@@ -62,7 +63,8 @@ hackrf_source_c_sptr make_hackrf_source_c (const std::string & args = "");
  */
 class hackrf_source_c :
     public gr::sync_block,
-    public source_iface
+    public source_iface,
+    protected hackrf_common
 {
 private:
   // The friend declaration allows make_hackrf_source_c to
@@ -125,9 +127,6 @@ private:
   int hackrf_rx_callback(unsigned char *buf, uint32_t len);
   static void _hackrf_wait(hackrf_source_c *obj);
   void hackrf_wait();
-
-  static int _usage;
-  static boost::mutex _usage_mutex;
 
   std::vector<gr_complex> _lut;
 
