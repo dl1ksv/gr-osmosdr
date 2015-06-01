@@ -4,6 +4,8 @@
 
 #include "hackrf_common.h"
 
+hackrf_device *hackrf_common::_dev = NULL;
+std::vector<std::string> hackrf_common::_devices;
 int hackrf_common::_usage = 0;
 boost::mutex hackrf_common::_usage_mutex;
 
@@ -19,7 +21,8 @@ hackrf_common::~hackrf_common()
 
 std::vector<std::string> hackrf_common::devices()
 {
-  std::vector<std::string> devices;
+  if (!_devices.empty()) return _devices;
+
   std::string label;
 #if 0
   for (unsigned int i = 0; i < 1 /* TODO: missing libhackrf api */; i++) {
@@ -32,7 +35,7 @@ std::vector<std::string> hackrf_common::devices()
     boost::algorithm::trim(label);
 
     args += ",label='" + label + "'";
-    devices.push_back( args );
+    _devices.push_back( args );
   }
 #else
 
@@ -62,7 +65,7 @@ std::vector<std::string> hackrf_common::devices()
     }
 
     args += ",label='" + label + "'";
-    devices.push_back( args );
+    _devices.push_back( args );
 
     ret = hackrf_close(dev);
   }
@@ -77,5 +80,5 @@ std::vector<std::string> hackrf_common::devices()
   }
 
 #endif
-  return devices;
+  return _devices;
 }

@@ -17,6 +17,8 @@ public:
 protected:
   static std::vector< std::string > devices();
 
+  static hackrf_device *_dev;
+  static std::vector<std::string> _devices;
   static int _usage;
   static boost::mutex _usage_mutex;
 };
