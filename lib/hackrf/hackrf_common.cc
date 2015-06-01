@@ -127,3 +127,17 @@ std::vector<std::string> hackrf_common::devices()
 #endif
   return _devices;
 }
+
+bool hackrf_common::set_bias( bool bias, size_t chan )
+{
+  int ret = hackrf_set_antenna_enable(_dev, static_cast<uint8_t>(bias));
+  if ( ret != HACKRF_SUCCESS )
+  {
+    std::cerr << "Failed to apply antenna bias voltage state: " << bias << " " << HACKRF_FORMAT_ERROR(ret) << std::endl;
+  }
+  else
+  {
+    std::cerr << (bias ? "Enabled" : "Disabled") << " antenna bias voltage" << std::endl;
+  }
+  return bias;
+}

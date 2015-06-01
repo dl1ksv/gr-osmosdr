@@ -147,6 +147,7 @@ private:
   double _amp_gain;
   double _vga_gain;
   double _bandwidth;
+  bool _bias;
 };
 
 #endif /* INCLUDED_HACKRF_SINK_C_H */

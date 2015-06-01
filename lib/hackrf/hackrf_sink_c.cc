@@ -149,7 +149,8 @@ hackrf_sink_c::hackrf_sink_c (const std::string &args)
     _auto_gain(false),
     _amp_gain(0),
     _vga_gain(0),
-    _bandwidth(0)
+    _bandwidth(0),
+    _bias(false)
 {
   int ret;
 
@@ -180,16 +181,7 @@ hackrf_sink_c::hackrf_sink_c (const std::string &args)
 
   // Check device args to find out if bias/phantom power is desired.
   if ( dict.count("bias_tx") ) {
-    bool bias = boost::lexical_cast<bool>( dict["bias_tx"] );
-    ret = hackrf_set_antenna_enable(hackrf_common::_dev, static_cast<uint8_t>(bias));
-    if ( ret != HACKRF_SUCCESS )
-    {
-      std::cerr << "Failed to apply antenna bias voltage state: " << bias << " " << HACKRF_FORMAT_ERROR(ret) << std::endl;
-    }
-    else
-    {
-      std::cerr << (bias ? "Enabled" : "Disabled") << " antenna bias voltage" << std::endl;
-    }
+    _bias = boost::lexical_cast<bool>( dict["bias_tx"] );
   }
 
   _buf = (char *) malloc( BUF_LEN );
@@ -258,6 +250,12 @@ bool hackrf_sink_c::start()
   if ( ! hackrf_common::_dev )
     return false;
 
+  set_center_freq(_center_freq);
+  set_sample_rate(_sample_rate);
+  set_bandwidth(_bandwidth);
+  set_gain(_amp_gain);
+  if (_bias) hackrf_common::set_bias(true);
+
   _stopping = false;
   _buf_used = 0;
   int ret = hackrf_start_tx( hackrf_common::_dev, _hackrf_tx_callback, (void *)this );
@@ -306,6 +304,7 @@ bool hackrf_sink_c::stop()
     std::cerr << "Failed to stop TX streaming (" << ret << ")" << std::endl;
     return false;
   }
+  if (_bias) hackrf_common::set_bias(false);
   return true;
 }
 

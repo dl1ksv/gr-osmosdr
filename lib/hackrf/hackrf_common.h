@@ -39,6 +39,8 @@ protected:
   static std::vector<std::string> _devices;
   static int _usage;
   static boost::mutex _usage_mutex;
+
+  static bool set_bias( bool enabled, size_t chan = 0 );
 };
 
 #endif

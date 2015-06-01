@@ -152,6 +152,7 @@ private:
   double _lna_gain;
   double _vga_gain;
   double _bandwidth;
+  bool _bias;
 };
 
 #endif /* INCLUDED_HACKRF_SOURCE_C_H */
