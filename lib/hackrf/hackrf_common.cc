@@ -16,7 +16,23 @@ hackrf_common::hackrf_common()
 
 hackrf_common::~hackrf_common()
 {
+  if (_dev) {
+//    _thread.join();
 
+    {
+      boost::mutex::scoped_lock lock( _usage_mutex );
+
+       _usage--;
+
+      if ( _usage == 0 ) {
+        int ret = hackrf_close( _dev );
+        HACKRF_THROW_ON_ERROR(ret, "Failed to close HackRF")
+        _dev = NULL;
+
+        hackrf_exit(); /* call only once after last close */
+      }
+    }
+  }
 }
 
 std::vector<std::string> hackrf_common::devices()

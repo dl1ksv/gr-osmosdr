@@ -51,23 +51,6 @@
 
 using namespace boost::assign;
 
-#define BUF_LEN  (16 * 32 * 512) /* must be multiple of 512 */
-#define BUF_NUM   15
-
-#define BYTES_PER_SAMPLE  2 /* HackRF device consumes 8 bit unsigned IQ data */
-
-#define HACKRF_FORMAT_ERROR(ret) \
-  boost::str( boost::format("(%d) %s") \
-    % ret % hackrf_error_name((enum hackrf_error)ret) ) \
-
-#define HACKRF_THROW_ON_ERROR(ret, msg) \
-  if ( ret != HACKRF_SUCCESS )  \
-  throw std::runtime_error( boost::str( boost::format(msg " (%d) %s") \
-      % ret % hackrf_error_name((enum hackrf_error)ret) ) );
-
-#define HACKRF_FUNC_STR(func, arg) \
-  boost::str(boost::format(func "(%d)") % arg) + " has failed"
-
 static inline bool cb_init(circular_buffer_t *cb, size_t capacity, size_t sz)
 {
   cb->buffer = malloc(capacity * sz);
@@ -249,22 +232,6 @@ hackrf_sink_c::hackrf_sink_c (const std::string &args)
  */
 hackrf_sink_c::~hackrf_sink_c ()
 {
-  if (hackrf_common::_dev) {
-//    _thread.join();
-    int ret = hackrf_close( hackrf_common::_dev );
-    HACKRF_THROW_ON_ERROR(ret, "Failed to close HackRF")
-    hackrf_common::_dev = NULL;
-
-    {
-      boost::mutex::scoped_lock lock( hackrf_common::_usage_mutex );
-
-       hackrf_common::_usage--;
-
-      if ( hackrf_common::_usage == 0 )
-        hackrf_exit(); /* call only once after last close */
-    }
-  }
-
   if (_buf) {
     free(_buf);
     _buf = NULL;

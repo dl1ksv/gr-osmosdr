@@ -44,23 +44,6 @@
 
 using namespace boost::assign;
 
-#define BUF_LEN  (16 * 32 * 512) /* must be multiple of 512 */
-#define BUF_NUM   15
-
-#define BYTES_PER_SAMPLE  2 /* HackRF device produces 8 bit unsigned IQ data */
-
-#define HACKRF_FORMAT_ERROR(ret) \
-  boost::str( boost::format("(%d) %s") \
-    % ret % hackrf_error_name((enum hackrf_error)ret) ) \
-
-#define HACKRF_THROW_ON_ERROR(ret, msg) \
-  if ( ret != HACKRF_SUCCESS )  \
-  throw std::runtime_error( boost::str( boost::format(msg " (%d) %s") \
-      % ret % hackrf_error_name((enum hackrf_error)ret) ) );
-
-#define HACKRF_FUNC_STR(func, arg) \
-  boost::str(boost::format(func "(%d)") % arg) + " has failed"
-
 hackrf_source_c_sptr make_hackrf_source_c (const std::string & args)
 {
   return gnuradio::get_initial_sptr(new hackrf_source_c (args));
@@ -202,22 +185,6 @@ hackrf_source_c::hackrf_source_c (const std::string &args)
  */
 hackrf_source_c::~hackrf_source_c ()
 {
-  if (hackrf_common::_dev) {
-//    _thread.join();
-    int ret = hackrf_close( hackrf_common::_dev );
-    HACKRF_THROW_ON_ERROR(ret, "Failed to close HackRF")
-    hackrf_common::_dev = NULL;
-
-    {
-      boost::mutex::scoped_lock lock( hackrf_common::_usage_mutex );
-
-       hackrf_common::_usage--;
-
-      if ( hackrf_common::_usage == 0 )
-        hackrf_exit(); /* call only once after last close */
-    }
-  }
-
   if (_buf) {
     for(unsigned int i = 0; i < _buf_num; ++i) {
       if (_buf[i])
