@@ -44,27 +44,6 @@
 
 using namespace boost::assign;
 
-#define BUF_LEN  (16 * 32 * 512) /* must be multiple of 512 */
-#define BUF_NUM   15
-
-#define BYTES_PER_SAMPLE  2 /* HackRF device produces 8 bit unsigned IQ data */
-
-#define HACKRF_FORMAT_ERROR(ret, msg) \
-  boost::str( boost::format(msg " (%1%) %2%") \
-    % ret % hackrf_error_name((enum hackrf_error)ret) )
-
-#define HACKRF_THROW_ON_ERROR(ret, msg) \
-  if ( ret != HACKRF_SUCCESS ) \
-  { \
-    throw std::runtime_error( HACKRF_FORMAT_ERROR(ret, msg) ); \
-  }
-
-#define HACKRF_FUNC_STR(func, arg) \
-  boost::str(boost::format(func "(%1%)") % arg) + " has failed"
-
-int hackrf_source_c::_usage = 0;
-boost::mutex hackrf_source_c::_usage_mutex;
-
 hackrf_source_c_sptr make_hackrf_source_c (const std::string & args)
 {
   return gnuradio::get_initial_sptr(new hackrf_source_c (args));
@@ -135,20 +114,20 @@ hackrf_source_c::hackrf_source_c (const std::string &args)
   }
 
   {
-    boost::mutex::scoped_lock lock( _usage_mutex );
+    boost::mutex::scoped_lock lock( hackrf_common::_usage_mutex );
 
-    if ( _usage == 0 )
+    if ( hackrf_common::_usage == 0 )
       hackrf_init(); /* call only once before the first open */
 
-    _usage++;
+    hackrf_common::_usage++;
   }
 
   _dev = NULL;
-  
+
 #ifdef LIBHACKRF_HAVE_DEVICE_LIST
   if (dict.count("hackrf") && dict["hackrf"].length() > 0) {
     hackrf_serial = dict["hackrf"];
-    
+
     if (hackrf_serial.length() > 1) {
       ret = hackrf_open_by_serial( hackrf_serial.c_str(), &_dev );
     } else {
@@ -173,7 +152,7 @@ hackrf_source_c::hackrf_source_c (const std::string &args)
   } else
 #endif
     ret = hackrf_open( &_dev );
-    
+
   HACKRF_THROW_ON_ERROR(ret, "Failed to open HackRF device")
 
   uint8_t board_id;
@@ -256,11 +235,11 @@ hackrf_source_c::~hackrf_source_c ()
     _dev = NULL;
 
     {
-      boost::mutex::scoped_lock lock( _usage_mutex );
+      boost::mutex::scoped_lock lock( hackrf_common::_usage_mutex );
 
-       _usage--;
+       hackrf_common::_usage--;
 
-      if ( _usage == 0 )
+      if ( hackrf_common::_usage == 0 )
         hackrf_exit(); /* call only once after last close */
     }
   }
@@ -395,78 +374,7 @@ int hackrf_source_c::work( int noutput_items,
 
 std::vector<std::string> hackrf_source_c::get_devices()
 {
-  std::vector<std::string> devices;
-  std::string label;
-  
-  {
-    boost::mutex::scoped_lock lock( _usage_mutex );
-
-    if ( _usage == 0 )
-      hackrf_init(); /* call only once before the first open */
-
-    _usage++;
-  }
-
-#ifdef LIBHACKRF_HAVE_DEVICE_LIST
-  hackrf_device_list_t *list = hackrf_device_list();
-  
-  for (int i = 0; i < list->devicecount; i++) {
-    label = "HackRF ";
-    label += hackrf_usb_board_id_name( list->usb_board_ids[i] );
-    
-    std::string args;
-    if (list->serial_numbers[i]) {
-      std::string serial = boost::lexical_cast< std::string >( list->serial_numbers[i] );
-      if (serial.length() > 6)
-        serial = serial.substr(serial.length() - 6, 6);
-      args = "hackrf=" + serial;
-      label += " " + serial;
-    } else
-      args = "hackrf"; /* will pick the first one, serial number is required for choosing a specific one */
-
-    boost::algorithm::trim(label);
-
-    args += ",label='" + label + "'";
-    devices.push_back( args );
-  }
-  
-  hackrf_device_list_free(list);
-#else
-
-  int ret;
-  hackrf_device *dev = NULL;
-  ret = hackrf_open(&dev);
-  if ( HACKRF_SUCCESS == ret )
-  {
-    std::string args = "hackrf=0";
-
-    label = "HackRF";
-
-    uint8_t board_id;
-    ret = hackrf_board_id_read( dev, &board_id );
-    if ( HACKRF_SUCCESS == ret )
-    {
-      label += std::string(" ") + hackrf_board_id_name(hackrf_board_id(board_id));
-    }
-
-    args += ",label='" + label + "'";
-    devices.push_back( args );
-
-    ret = hackrf_close(dev);
-  }
-
-#endif
-
-  {
-    boost::mutex::scoped_lock lock( _usage_mutex );
-
-     _usage--;
-
-    if ( _usage == 0 )
-      hackrf_exit(); /* call only once after last close */
-  }
-
-  return devices;
+  return hackrf_common::get_devices();
 }
 
 size_t hackrf_source_c::get_num_channels()
