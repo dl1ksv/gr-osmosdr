@@ -29,6 +29,7 @@
 #include <libhackrf/hackrf.h>
 
 #include "sink_iface.h"
+#include "hackrf_common.h"
 
 class hackrf_sink_c;
 
@@ -67,7 +68,8 @@ hackrf_sink_c_sptr make_hackrf_sink_c (const std::string & args = "");
 
 class hackrf_sink_c :
     public gr::sync_block,
-    public sink_iface
+    public sink_iface,
+    protected hackrf_common
 {
 private:
   // The friend declaration allows hackrf_make_sink_c to
@@ -126,9 +128,6 @@ private:
   int hackrf_tx_callback(unsigned char *buffer, uint32_t length);
   static void _hackrf_wait(hackrf_sink_c *obj);
   void hackrf_wait();
-
-  static int _usage;
-  static boost::mutex _usage_mutex;
 
   hackrf_device *_dev;
 //  gr::thread::thread _thread;

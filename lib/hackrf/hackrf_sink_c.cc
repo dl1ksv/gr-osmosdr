@@ -51,23 +51,6 @@
 
 using namespace boost::assign;
 
-#define BUF_LEN  (16 * 32 * 512) /* must be multiple of 512 */
-#define BUF_NUM   15
-
-#define BYTES_PER_SAMPLE  2 /* HackRF device consumes 8 bit unsigned IQ data */
-
-#define HACKRF_FORMAT_ERROR(ret) \
-  boost::str( boost::format("(%d) %s") \
-    % ret % hackrf_error_name((enum hackrf_error)ret) ) \
-
-#define HACKRF_THROW_ON_ERROR(ret, msg) \
-  if ( ret != HACKRF_SUCCESS )  \
-  throw std::runtime_error( boost::str( boost::format(msg " (%d) %s") \
-      % ret % hackrf_error_name((enum hackrf_error)ret) ) );
-
-#define HACKRF_FUNC_STR(func, arg) \
-  boost::str(boost::format(func "(%d)") % arg) + " has failed"
-
 static inline bool cb_init(circular_buffer_t *cb, size_t capacity, size_t sz)
 {
   cb->buffer = malloc(capacity * sz);
@@ -126,9 +109,6 @@ static inline bool cb_pop_front(circular_buffer_t *cb, void *item)
   return true;
 }
 
-int hackrf_sink_c::_usage = 0;
-boost::mutex hackrf_sink_c::_usage_mutex;
-
 hackrf_sink_c_sptr make_hackrf_sink_c (const std::string & args)
 {
   return gnuradio::get_initial_sptr(new hackrf_sink_c (args));
@@ -182,12 +162,12 @@ hackrf_sink_c::hackrf_sink_c (const std::string &args)
     _buf_num = BUF_NUM;
 
   {
-    boost::mutex::scoped_lock lock( _usage_mutex );
+    boost::mutex::scoped_lock lock( hackrf_common::_usage_mutex );
 
-    if ( _usage == 0 )
+    if ( hackrf_common::_usage == 0 )
       hackrf_init(); /* call only once before the first open */
 
-    _usage++;
+    hackrf_common::_usage++;
   }
 
   _dev = NULL;
@@ -195,7 +175,7 @@ hackrf_sink_c::hackrf_sink_c (const std::string &args)
   if ( hackrf_serial )
     ret = hackrf_open_by_serial( hackrf_serial->c_str(), &_dev );
   else
-#endif  
+#endif
     ret = hackrf_open( &_dev );
   HACKRF_THROW_ON_ERROR(ret, "Failed to open HackRF device")
 
@@ -267,11 +247,11 @@ hackrf_sink_c::~hackrf_sink_c ()
     _dev = NULL;
 
     {
-      boost::mutex::scoped_lock lock( _usage_mutex );
+      boost::mutex::scoped_lock lock( hackrf_common::_usage_mutex );
 
-       _usage--;
+       hackrf_common::_usage--;
 
-      if ( _usage == 0 )
+      if ( hackrf_common::_usage == 0 )
         hackrf_exit(); /* call only once after last close */
     }
   }
@@ -470,78 +450,7 @@ int hackrf_sink_c::work( int noutput_items,
 
 std::vector<std::string> hackrf_sink_c::get_devices()
 {
-  std::vector<std::string> devices;
-  std::string label;
-  
-  {
-    boost::mutex::scoped_lock lock( _usage_mutex );
-
-    if ( _usage == 0 )
-      hackrf_init(); /* call only once before the first open */
-
-    _usage++;
-  }
-
-#ifdef LIBHACKRF_HAVE_DEVICE_LIST
-  hackrf_device_list_t *list = hackrf_device_list();
-  
-  for (int i = 0; i < list->devicecount; i++) {
-    label = "HackRF ";
-    label += hackrf_usb_board_id_name( list->usb_board_ids[i] );
-    
-    std::string args;
-    if (list->serial_numbers[i]) {
-      std::string serial = boost::lexical_cast< std::string >( list->serial_numbers[i] );
-      if (serial.length() > 6)
-        serial = serial.substr(serial.length() - 6, 6);
-      args = "hackrf=" + serial;
-      label += " " + serial;
-    } else
-      args = "hackrf"; /* will pick the first one, serial number is required for choosing a specific one */
-
-    boost::algorithm::trim(label);
-
-    args += ",label='" + label + "'";
-    devices.push_back( args );
-  }
-  
-  hackrf_device_list_free(list);
-#else
-
-  int ret;
-  hackrf_device *dev = NULL;
-  ret = hackrf_open(&dev);
-  if ( HACKRF_SUCCESS == ret )
-  {
-    std::string args = "hackrf=0";
-
-    label = "HackRF";
-
-    uint8_t board_id;
-    ret = hackrf_board_id_read( dev, &board_id );
-    if ( HACKRF_SUCCESS == ret )
-    {
-      label += std::string(" ") + hackrf_board_id_name(hackrf_board_id(board_id));
-    }
-
-    args += ",label='" + label + "'";
-    devices.push_back( args );
-
-    ret = hackrf_close(dev);
-  }
-
-#endif
-
-  {
-    boost::mutex::scoped_lock lock( _usage_mutex );
-
-     _usage--;
-
-    if ( _usage == 0 )
-      hackrf_exit(); /* call only once after last close */
-  }
-
-  return devices;
+  return hackrf_common::get_devices();
 }
 
 size_t hackrf_sink_c::get_num_channels()
