@@ -129,7 +129,6 @@ private:
   static void _hackrf_wait(hackrf_sink_c *obj);
   void hackrf_wait();
 
-  hackrf_device *_dev;
 //  gr::thread::thread _thread;
 
   circular_buffer_t _cbuf;

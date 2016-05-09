@@ -130,7 +130,6 @@ private:
 
   std::vector<gr_complex> _lut;
 
-  hackrf_device *_dev;
 //  gr::thread::thread _thread;
 
   unsigned short **_buf;

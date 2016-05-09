@@ -140,7 +140,6 @@ hackrf_sink_c::hackrf_sink_c (const std::string &args)
   : gr::sync_block ("hackrf_sink_c",
         gr::io_signature::make(MIN_IN, MAX_IN, sizeof (gr_complex)),
         gr::io_signature::make(MIN_OUT, MAX_OUT, sizeof (gr_complex))),
-    _dev(NULL),
     _buf(NULL),
     _sample_rate(0),
     _center_freq(0),
@@ -175,27 +174,26 @@ hackrf_sink_c::hackrf_sink_c (const std::string &args)
     hackrf_common::_usage++;
   }
 
-  _dev = NULL;
   _stopping = false;
 #ifdef LIBHACKRF_HAVE_DEVICE_LIST
   if ( hackrf_serial )
-    ret = hackrf_open_by_serial( hackrf_serial->c_str(), &_dev );
+    ret = hackrf_open_by_serial( hackrf_serial->c_str(), &hackrf_common::_dev );
   else
 #endif
-    ret = hackrf_open( &_dev );
+    ret = hackrf_open( &hackrf_common::_dev );
   HACKRF_THROW_ON_ERROR(ret, "Failed to open HackRF device")
 
   uint8_t board_id;
-  ret = hackrf_board_id_read( _dev, &board_id );
+  ret = hackrf_board_id_read( hackrf_common::_dev, &board_id );
   HACKRF_THROW_ON_ERROR(ret, "Failed to get HackRF board id")
 
   char version[40];
   memset(version, 0, sizeof(version));
-  ret = hackrf_version_string_read( _dev, version, sizeof(version));
+  ret = hackrf_version_string_read( hackrf_common::_dev, version, sizeof(version));
   HACKRF_THROW_ON_ERROR(ret, "Failed to read version string")
 #if 0
   read_partid_serialno_t serial_number;
-  ret = hackrf_board_partid_serialno_read( _dev, &serial_number );
+  ret = hackrf_board_partid_serialno_read( hackrf_common::_dev, &serial_number );
   HACKRF_THROW_ON_ERROR(ret, "Failed to read serial number")
 #endif
   std::cerr << "Using " << hackrf_board_id_name(hackrf_board_id(board_id)) << " "
@@ -218,7 +216,7 @@ hackrf_sink_c::hackrf_sink_c (const std::string &args)
   // Check device args to find out if bias/phantom power is desired.
   if ( dict.count("bias_tx") ) {
     bool bias = boost::lexical_cast<bool>( dict["bias_tx"] );
-    ret = hackrf_set_antenna_enable(_dev, static_cast<uint8_t>(bias));
+    ret = hackrf_set_antenna_enable(hackrf_common::_dev, static_cast<uint8_t>(bias));
     if ( ret != HACKRF_SUCCESS )
     {
       std::cerr << "Failed to apply antenna bias voltage state: " << bias << " " << HACKRF_FORMAT_ERROR(ret) << std::endl;
@@ -241,11 +239,11 @@ hackrf_sink_c::hackrf_sink_c (const std::string &args)
  */
 hackrf_sink_c::~hackrf_sink_c ()
 {
-  if (_dev) {
+  if (hackrf_common::_dev) {
 //    _thread.join();
-    int ret = hackrf_close( _dev );
+    int ret = hackrf_close( hackrf_common::_dev );
     HACKRF_THROW_ON_ERROR(ret, "Failed to close HackRF")
-    _dev = NULL;
+    hackrf_common::_dev = NULL;
 
     {
       boost::mutex::scoped_lock lock( hackrf_common::_usage_mutex );
@@ -306,12 +304,12 @@ void hackrf_sink_c::hackrf_wait()
 
 bool hackrf_sink_c::start()
 {
-  if ( ! _dev )
+  if ( ! hackrf_common::_dev )
     return false;
 
   _stopping = false;
   _buf_used = 0;
-  int ret = hackrf_start_tx( _dev, _hackrf_tx_callback, (void *)this );
+  int ret = hackrf_start_tx( hackrf_common::_dev, _hackrf_tx_callback, (void *)this );
   if ( ret != HACKRF_SUCCESS ) {
     std::cerr << "Failed to start TX streaming (" << ret << ")" << std::endl;
     return false;
@@ -323,7 +321,7 @@ bool hackrf_sink_c::stop()
 {
   int i;
 
-  if ( ! _dev )
+  if ( ! hackrf_common::_dev )
     return false;
 
     {
@@ -348,11 +346,11 @@ bool hackrf_sink_c::stop()
 
       _stopping = true;
 
-      while (hackrf_is_streaming(_dev) == HACKRF_TRUE)
+      while (hackrf_is_streaming(hackrf_common::_dev) == HACKRF_TRUE)
         _buf_cond.wait( lock );
     }
 
-  int ret = hackrf_stop_tx( _dev );
+  int ret = hackrf_stop_tx( hackrf_common::_dev );
   if ( ret != HACKRF_SUCCESS ) {
     std::cerr << "Failed to stop TX streaming (" << ret << ")" << std::endl;
     return false;
@@ -511,8 +509,8 @@ double hackrf_sink_c::set_sample_rate( double rate )
 {
   int ret;
 
-  if (_dev) {
-    ret = hackrf_set_sample_rate( _dev, rate );
+  if (hackrf_common::_dev) {
+    ret = hackrf_set_sample_rate( hackrf_common::_dev, rate );
     if ( HACKRF_SUCCESS == ret ) {
       _sample_rate = rate;
       //set_bandwidth( 0.0 ); /* bandwidth of 0 means automatic filter selection */
@@ -544,9 +542,9 @@ double hackrf_sink_c::set_center_freq( double freq, size_t chan )
 
   #define APPLY_PPM_CORR(val, ppm) ((val) * (1.0 + (ppm) * 0.000001))
 
-  if (_dev) {
+  if (hackrf_common::_dev) {
     double corr_freq = APPLY_PPM_CORR( freq, _freq_corr );
-    ret = hackrf_set_freq( _dev, uint64_t(corr_freq) );
+    ret = hackrf_set_freq( hackrf_common::_dev, uint64_t(corr_freq) );
     if ( HACKRF_SUCCESS == ret ) {
       _center_freq = freq;
     } else {
@@ -621,11 +619,11 @@ double hackrf_sink_c::set_gain( double gain, size_t chan )
   int ret;
   osmosdr::gain_range_t rf_gains = get_gain_range( "RF", chan );
 
-  if (_dev) {
+  if (hackrf_common::_dev) {
     double clip_gain = rf_gains.clip( gain, true );
     uint8_t value = clip_gain == 14.0f ? 1 : 0;
 
-    ret = hackrf_set_amp_enable( _dev, value );
+    ret = hackrf_set_amp_enable( hackrf_common::_dev, value );
     if ( HACKRF_SUCCESS == ret ) {
       _amp_gain = clip_gain;
     } else {
@@ -672,10 +670,10 @@ double hackrf_sink_c::set_if_gain( double gain, size_t chan )
   int ret;
   osmosdr::gain_range_t if_gains = get_gain_range( "IF", chan );
 
-  if (_dev) {
+  if (hackrf_common::_dev) {
     double clip_gain = if_gains.clip( gain, true );
 
-    ret = hackrf_set_txvga_gain( _dev, uint32_t(clip_gain) );
+    ret = hackrf_set_txvga_gain( hackrf_common::_dev, uint32_t(clip_gain) );
     if ( HACKRF_SUCCESS == ret ) {
       _vga_gain = clip_gain;
     } else {
@@ -718,10 +716,10 @@ double hackrf_sink_c::set_bandwidth( double bandwidth, size_t chan )
   if ( bandwidth == 0.0 ) /* bandwidth of 0 means automatic filter selection */
     bandwidth = _sample_rate * 0.75; /* select narrower filters to prevent aliasing */
 
-  if ( _dev ) {
+  if ( hackrf_common::_dev ) {
     /* compute best default value depending on sample rate (auto filter) */
     uint32_t bw = hackrf_compute_baseband_filter_bw( uint32_t(bandwidth) );
-    ret = hackrf_set_baseband_filter_bandwidth( _dev, bw );
+    ret = hackrf_set_baseband_filter_bandwidth( hackrf_common::_dev, bw );
     if ( HACKRF_SUCCESS == ret ) {
       _bandwidth = bw;
     } else {
