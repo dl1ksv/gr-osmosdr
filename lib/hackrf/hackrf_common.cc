@@ -3,6 +3,7 @@
 #endif
 
 #include <boost/lexical_cast.hpp>
+#include <boost/format.hpp>
 #include <boost/algorithm/string.hpp>
 
 #include "hackrf_common.h"
@@ -19,7 +20,24 @@ hackrf_common::hackrf_common()
 
 hackrf_common::~hackrf_common()
 {
+  if (_dev) {
+//    _thread.join();
+    int ret = hackrf_close( _dev );
+    if ( ret != HACKRF_SUCCESS )
+    {
+      std::cerr << HACKRF_FORMAT_ERROR(ret, "Failed to close HackRF") << std::endl;
+    }
+    _dev = NULL;
 
+    {
+      boost::mutex::scoped_lock lock( _usage_mutex );
+
+       _usage--;
+
+      if ( _usage == 0 )
+        hackrf_exit(); /* call only once after last close */
+    }
+  }
 }
 
 std::vector<std::string> hackrf_common::get_devices()

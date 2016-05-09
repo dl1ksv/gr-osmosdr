@@ -239,25 +239,6 @@ hackrf_sink_c::hackrf_sink_c (const std::string &args)
  */
 hackrf_sink_c::~hackrf_sink_c ()
 {
-  if (hackrf_common::_dev) {
-//    _thread.join();
-    int ret = hackrf_close( hackrf_common::_dev );
-    if ( ret != HACKRF_SUCCESS )
-    {
-      std::cerr << HACKRF_FORMAT_ERROR(ret, "Failed to close HackRF") << std::endl;
-    }
-    hackrf_common::_dev = NULL;
-
-    {
-      boost::mutex::scoped_lock lock( hackrf_common::_usage_mutex );
-
-       hackrf_common::_usage--;
-
-      if ( hackrf_common::_usage == 0 )
-        hackrf_exit(); /* call only once after last close */
-    }
-  }
-
   free(_buf);
   _buf = NULL;
 
