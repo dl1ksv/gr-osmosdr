@@ -85,6 +85,11 @@ static inline bool cb_has_room(circular_buffer_t *cb)
   return true;
 }
 
+static inline bool cb_is_empty(circular_buffer_t *cb)
+{
+  return cb->count == 0;
+}
+
 static inline bool cb_push_back(circular_buffer_t *cb, const void *item)
 {
   if(cb->count == cb->capacity)
@@ -171,6 +176,7 @@ hackrf_sink_c::hackrf_sink_c (const std::string &args)
   }
 
   _dev = NULL;
+  _stopping = false;
 #ifdef LIBHACKRF_HAVE_DEVICE_LIST
   if ( hackrf_serial )
     ret = hackrf_open_by_serial( hackrf_serial->c_str(), &_dev );
@@ -228,9 +234,6 @@ hackrf_sink_c::hackrf_sink_c (const std::string &args)
   cb_init( &_cbuf, _buf_num, BUF_LEN );
 
 //  _thread = gr::thread::thread(_hackrf_wait, this);
-
-  ret = hackrf_start_tx( _dev, _hackrf_tx_callback, (void *)this );
-  HACKRF_THROW_ON_ERROR(ret, "Failed to start TX streaming")
 }
 
 /*
@@ -240,9 +243,7 @@ hackrf_sink_c::~hackrf_sink_c ()
 {
   if (_dev) {
 //    _thread.join();
-    int ret = hackrf_stop_tx( _dev );
-    HACKRF_THROW_ON_ERROR(ret, "Failed to stop TX streaming")
-    ret = hackrf_close( _dev );
+    int ret = hackrf_close( _dev );
     HACKRF_THROW_ON_ERROR(ret, "Failed to close HackRF")
     _dev = NULL;
 
@@ -279,7 +280,12 @@ int hackrf_sink_c::hackrf_tx_callback(unsigned char *buffer, uint32_t length)
 
     if ( ! cb_pop_front( &_cbuf, buffer ) ) {
       memset(buffer, 0, length);
-      std::cerr << "U" << std::flush;
+      if (_stopping) {
+        _buf_cond.notify_one();
+        return -1;
+      } else {
+        std::cerr << "U" << std::flush;
+      }
     } else {
 //      std::cerr << "-" << std::flush;
       _buf_cond.notify_one();
@@ -303,28 +309,54 @@ bool hackrf_sink_c::start()
   if ( ! _dev )
     return false;
 
+  _stopping = false;
   _buf_used = 0;
-#if 0
   int ret = hackrf_start_tx( _dev, _hackrf_tx_callback, (void *)this );
   if ( ret != HACKRF_SUCCESS ) {
     std::cerr << "Failed to start TX streaming (" << ret << ")" << std::endl;
     return false;
   }
-#endif
   return true;
 }
 
 bool hackrf_sink_c::stop()
 {
+  int i;
+
   if ( ! _dev )
     return false;
-#if 0
+
+    {
+      boost::mutex::scoped_lock lock( _buf_mutex );
+
+      while ( ! cb_has_room(&_cbuf) )
+        _buf_cond.wait( lock );
+
+      // Fill the rest of the current buffer with silence.
+      memset(_buf + _buf_used, 0, BUF_LEN - _buf_used);
+      cb_push_back( &_cbuf, _buf );
+      _buf_used = 0;
+
+      // Add some more silence so the end doesn't get cut off.
+      memset(_buf, 0, BUF_LEN);
+      for (i = 0; i < 5; i++) {
+        while ( ! cb_has_room(&_cbuf) )
+          _buf_cond.wait( lock );
+
+        cb_push_back( &_cbuf, _buf );
+      }
+
+      _stopping = true;
+
+      while (hackrf_is_streaming(_dev) == HACKRF_TRUE)
+        _buf_cond.wait( lock );
+    }
+
   int ret = hackrf_stop_tx( _dev );
   if ( ret != HACKRF_SUCCESS ) {
     std::cerr << "Failed to stop TX streaming (" << ret << ")" << std::endl;
     return false;
   }
-#endif
   return true;
 }
 
