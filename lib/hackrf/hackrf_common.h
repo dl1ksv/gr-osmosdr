@@ -28,7 +28,7 @@
 class hackrf_common
 {
 public:
-  hackrf_common();
+  hackrf_common(const std::string &args);
   ~hackrf_common();
 
 protected:

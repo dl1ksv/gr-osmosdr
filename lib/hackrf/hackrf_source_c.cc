@@ -70,6 +70,7 @@ hackrf_source_c::hackrf_source_c (const std::string &args)
   : gr::sync_block ("hackrf_source_c",
         gr::io_signature::make(MIN_IN, MAX_IN, sizeof (gr_complex)),
         gr::io_signature::make(MIN_OUT, MAX_OUT, sizeof (gr_complex))),
+    hackrf_common::hackrf_common(args),
     _buf(NULL),
     _sample_rate(0),
     _center_freq(0),
@@ -81,7 +82,6 @@ hackrf_source_c::hackrf_source_c (const std::string &args)
     _bandwidth(0)
 {
   int ret;
-  std::string hackrf_serial;
 
   dict_t dict = params_to_dict(args);
 
@@ -111,64 +111,6 @@ hackrf_source_c::hackrf_source_c (const std::string &args)
                                 (float(int8_t(i & 0xff))) * (1.0f/128.0f) ) );
 #endif
   }
-
-  {
-    boost::mutex::scoped_lock lock( hackrf_common::_usage_mutex );
-
-    if ( hackrf_common::_usage == 0 )
-      hackrf_init(); /* call only once before the first open */
-
-    hackrf_common::_usage++;
-  }
-
-#ifdef LIBHACKRF_HAVE_DEVICE_LIST
-  if (dict.count("hackrf") && dict["hackrf"].length() > 0) {
-    hackrf_serial = dict["hackrf"];
-
-    if (hackrf_serial.length() > 1) {
-      ret = hackrf_open_by_serial( hackrf_serial.c_str(), &hackrf_common::_dev );
-    } else {
-        int dev_index = 0;
-        try {
-          dev_index = boost::lexical_cast< int >( hackrf_serial );
-        } catch ( std::exception &ex ) {
-          throw std::runtime_error(
-                "Failed to use '" + hackrf_serial + "' as HackRF device index number: " + ex.what());
-        }
-
-        hackrf_device_list_t *list = hackrf_device_list();
-        if (dev_index < list->devicecount) {
-          ret = hackrf_device_list_open(list, dev_index, &hackrf_common::_dev);
-        } else {
-          hackrf_device_list_free(list);
-          throw std::runtime_error(
-                "Failed to use '" + hackrf_serial + "' as HackRF device index: not enough devices");
-        }
-        hackrf_device_list_free(list);
-    }
-  } else
-#endif
-    ret = hackrf_open( &hackrf_common::_dev );
-
-  HACKRF_THROW_ON_ERROR(ret, "Failed to open HackRF device")
-
-  uint8_t board_id;
-  ret = hackrf_board_id_read( hackrf_common::_dev, &board_id );
-  HACKRF_THROW_ON_ERROR(ret, "Failed to get HackRF board id")
-
-  char version[40];
-  memset(version, 0, sizeof(version));
-  ret = hackrf_version_string_read( hackrf_common::_dev, version, sizeof(version));
-  HACKRF_THROW_ON_ERROR(ret, "Failed to read version string")
-
-#if 0
-  read_partid_serialno_t serial_number;
-  ret = hackrf_board_partid_serialno_read( hackrf_common::_dev, &serial_number );
-  HACKRF_THROW_ON_ERROR(ret, "Failed to read serial number")
-#endif
-  std::cerr << "Using " << hackrf_board_id_name(hackrf_board_id(board_id)) << " "
-            << "with firmware " << version << " "
-            << std::endl;
 
   if ( BUF_NUM != _buf_num || BUF_LEN != _buf_len ) {
     std::cerr << "Using " << _buf_num << " buffers of size " << _buf_len << "."

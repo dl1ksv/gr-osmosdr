@@ -140,6 +140,7 @@ hackrf_sink_c::hackrf_sink_c (const std::string &args)
   : gr::sync_block ("hackrf_sink_c",
         gr::io_signature::make(MIN_IN, MAX_IN, sizeof (gr_complex)),
         gr::io_signature::make(MIN_OUT, MAX_OUT, sizeof (gr_complex))),
+    hackrf_common::hackrf_common(args),
     _buf(NULL),
     _sample_rate(0),
     _center_freq(0),
@@ -150,12 +151,8 @@ hackrf_sink_c::hackrf_sink_c (const std::string &args)
     _bandwidth(0)
 {
   int ret;
-  std::string *hackrf_serial = NULL;
 
   dict_t dict = params_to_dict(args);
-
-  if (dict.count("hackrf") && dict["hackrf"].length() > 0)
-    hackrf_serial = &dict["hackrf"];
 
   _buf_num = 0;
 
@@ -165,40 +162,7 @@ hackrf_sink_c::hackrf_sink_c (const std::string &args)
   if (0 == _buf_num)
     _buf_num = BUF_NUM;
 
-  {
-    boost::mutex::scoped_lock lock( hackrf_common::_usage_mutex );
-
-    if ( hackrf_common::_usage == 0 )
-      hackrf_init(); /* call only once before the first open */
-
-    hackrf_common::_usage++;
-  }
-
   _stopping = false;
-#ifdef LIBHACKRF_HAVE_DEVICE_LIST
-  if ( hackrf_serial )
-    ret = hackrf_open_by_serial( hackrf_serial->c_str(), &hackrf_common::_dev );
-  else
-#endif
-    ret = hackrf_open( &hackrf_common::_dev );
-  HACKRF_THROW_ON_ERROR(ret, "Failed to open HackRF device")
-
-  uint8_t board_id;
-  ret = hackrf_board_id_read( hackrf_common::_dev, &board_id );
-  HACKRF_THROW_ON_ERROR(ret, "Failed to get HackRF board id")
-
-  char version[40];
-  memset(version, 0, sizeof(version));
-  ret = hackrf_version_string_read( hackrf_common::_dev, version, sizeof(version));
-  HACKRF_THROW_ON_ERROR(ret, "Failed to read version string")
-#if 0
-  read_partid_serialno_t serial_number;
-  ret = hackrf_board_partid_serialno_read( hackrf_common::_dev, &serial_number );
-  HACKRF_THROW_ON_ERROR(ret, "Failed to read serial number")
-#endif
-  std::cerr << "Using " << hackrf_board_id_name(hackrf_board_id(board_id)) << " "
-            << "with firmware " << version << " "
-            << std::endl;
 
   if ( BUF_NUM != _buf_num ) {
     std::cerr << "Using " << _buf_num << " buffers of size " << BUF_LEN << "."
