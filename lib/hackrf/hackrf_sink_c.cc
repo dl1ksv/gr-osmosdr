@@ -272,31 +272,31 @@ bool hackrf_sink_c::stop()
   if ( ! hackrf_common::_dev )
     return false;
 
-    {
-      boost::mutex::scoped_lock lock( _buf_mutex );
+  {
+    boost::mutex::scoped_lock lock( _buf_mutex );
 
+    while ( ! cb_has_room(&_cbuf) )
+      _buf_cond.wait( lock );
+
+    // Fill the rest of the current buffer with silence.
+    memset(_buf + _buf_used, 0, BUF_LEN - _buf_used);
+    cb_push_back( &_cbuf, _buf );
+    _buf_used = 0;
+
+    // Add some more silence so the end doesn't get cut off.
+    memset(_buf, 0, BUF_LEN);
+    for (i = 0; i < 5; i++) {
       while ( ! cb_has_room(&_cbuf) )
         _buf_cond.wait( lock );
 
-      // Fill the rest of the current buffer with silence.
-      memset(_buf + _buf_used, 0, BUF_LEN - _buf_used);
       cb_push_back( &_cbuf, _buf );
-      _buf_used = 0;
-
-      // Add some more silence so the end doesn't get cut off.
-      memset(_buf, 0, BUF_LEN);
-      for (i = 0; i < 5; i++) {
-        while ( ! cb_has_room(&_cbuf) )
-          _buf_cond.wait( lock );
-
-        cb_push_back( &_cbuf, _buf );
-      }
-
-      _stopping = true;
-
-      while (hackrf_is_streaming(hackrf_common::_dev) == HACKRF_TRUE)
-        _buf_cond.wait( lock );
     }
+
+    _stopping = true;
+
+    while (hackrf_is_streaming(hackrf_common::_dev) == HACKRF_TRUE)
+      _buf_cond.wait( lock );
+  }
 
   int ret = hackrf_stop_tx( hackrf_common::_dev );
   if ( ret != HACKRF_SUCCESS ) {
