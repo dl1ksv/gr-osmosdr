@@ -42,7 +42,11 @@ typedef struct osmosdr_dev osmosdr_dev_t;
  *
  * As a convention, the _sptr suffix indicates a boost::shared_ptr
  */
+#ifdef BOOST_SHARED_PTR
 typedef boost::shared_ptr<osmosdr_src_c> osmosdr_src_c_sptr;
+#else
+typedef std::shared_ptr<osmosdr_src_c> osmosdr_src_c_sptr;
+#endif
 
 /*!
  * \brief Return a shared_ptr to a new instance of osmosdr_src_c.

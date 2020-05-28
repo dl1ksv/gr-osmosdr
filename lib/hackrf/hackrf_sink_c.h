@@ -55,7 +55,11 @@ typedef struct circular_buffer
  *
  * As a convention, the _sptr suffix indicates a boost::shared_ptr
  */
+#ifdef BOOST_SHARED_PTR
 typedef boost::shared_ptr<hackrf_sink_c> hackrf_sink_c_sptr;
+#else
+typedef std::shared_ptr<hackrf_sink_c> hackrf_sink_c_sptr;
+#endif
 
 /*!
  * \brief Return a shared_ptr to a new instance of hackrf_sink_c.

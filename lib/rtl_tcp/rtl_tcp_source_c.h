@@ -26,7 +26,11 @@
 
 class rtl_tcp_source_c;
 
+#ifdef BOOST_SHARED_PTR
 typedef boost::shared_ptr< rtl_tcp_source_c > rtl_tcp_source_c_sptr;
+#else
+typedef std::shared_ptr< rtl_tcp_source_c > rtl_tcp_source_c_sptr;
+#endif
 
 rtl_tcp_source_c_sptr make_rtl_tcp_source_c( const std::string & args = "" );
 

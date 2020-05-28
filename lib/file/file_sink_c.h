@@ -28,7 +28,11 @@
 
 class file_sink_c;
 
+#ifdef BOOST_SHARED_PTR
 typedef boost::shared_ptr< file_sink_c > file_sink_c_sptr;
+#else
+typedef std::shared_ptr< file_sink_c > file_sink_c_sptr;
+#endif
 
 file_sink_c_sptr make_file_sink_c( const std::string & args = "" );
 

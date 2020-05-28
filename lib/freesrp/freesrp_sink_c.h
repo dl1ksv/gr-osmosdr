@@ -49,7 +49,11 @@ class freesrp_sink_c;
  *
  * As a convention, the _sptr suffix indicates a boost::shared_ptr
  */
+#ifdef BOOST_SHARED_PTR
 typedef boost::shared_ptr<freesrp_sink_c> freesrp_sink_c_sptr;
+#else
+typedef std::shared_ptr<freesrp_sink_c> freesrp_sink_c_sptr;
+#endif
 
 /*!
  * \brief Return a shared_ptr to a new instance of freesrp_sink_c.

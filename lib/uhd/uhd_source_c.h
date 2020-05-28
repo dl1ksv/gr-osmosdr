@@ -27,7 +27,11 @@
 
 class uhd_source_c;
 
+#ifdef BOOST_SHARED_PTR
 typedef boost::shared_ptr< uhd_source_c > uhd_source_c_sptr;
+#else
+typedef std::shared_ptr< uhd_source_c > uhd_source_c_sptr;
+#endif
 
 uhd_source_c_sptr make_uhd_source_c(const std::string &args = "");
 

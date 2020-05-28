@@ -34,6 +34,10 @@ include(GrPython)
 set(GR_SWIG_INCLUDE_DIRS $<TARGET_PROPERTY:gnuradio::runtime_swig,INTERFACE_INCLUDE_DIRECTORIES>)
 set(GR_SWIG_TARGET_DEPS gnuradio::runtime_swig)
 
+if(Gnuradio_VERSION VERSION_LESS "3.9")
+    list(APPEND GR_SWIG_FLAGS "-DBOOST_SHARED_PTR")
+endif()
+
 set(GR_SWIG_LIBRARIES gnuradio-osmosdr)
 
 set(GR_SWIG_DOC_FILE ${CMAKE_CURRENT_BINARY_DIR}/osmosdr_swig_doc.i)

@@ -51,6 +51,10 @@ set(VERSION_ABI   0)
 set(VERSION_PATCH 0)
 include(GrVersion) #setup version info
 
+if(Gnuradio_VERSION VERSION_LESS "3.9")
+    add_definitions(-DBOOST_SHARED_PTR)
+endif()
+
 ########################################################################
 # Compiler specific setup
 ########################################################################

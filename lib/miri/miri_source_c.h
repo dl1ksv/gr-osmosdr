@@ -42,7 +42,11 @@ typedef struct mirisdr_dev mirisdr_dev_t;
  *
  * As a convention, the _sptr suffix indicates a boost::shared_ptr
  */
+#ifdef BOOST_SHARED_PTR
 typedef boost::shared_ptr<miri_source_c> miri_source_c_sptr;
+#else
+typedef std::shared_ptr<miri_source_c> miri_source_c_sptr;
+#endif
 
 /*!
  * \brief Return a shared_ptr to a new instance of miri_source_c.

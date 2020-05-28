@@ -62,8 +62,8 @@
     }
 };
 
-%define OSMOSDR_SWIG_BLOCK_MAGIC2(PKG, BASE_NAME)
-%template(BASE_NAME ## _sptr) boost::shared_ptr<PKG ## :: ## BASE_NAME>;
+%define OSMOSDR_SWIG_BLOCK_MAGIC2(PTR, PKG, BASE_NAME)
+%template(BASE_NAME ## _sptr) PTR<PKG ## :: ## BASE_NAME>;
 %pythoncode %{
 BASE_NAME ## _sptr.__repr__ = lambda self: "<gr_block %s (%d)>" % (self.name(), self.unique_id())
 BASE_NAME = BASE_NAME.make;
@@ -73,8 +73,13 @@ BASE_NAME = BASE_NAME.make;
 %include "osmosdr/source.h"
 %include "osmosdr/sink.h"
 
-OSMOSDR_SWIG_BLOCK_MAGIC2(osmosdr,source);
-OSMOSDR_SWIG_BLOCK_MAGIC2(osmosdr,sink);
+#ifdef BOOST_SHARED_PTR
+OSMOSDR_SWIG_BLOCK_MAGIC2(boost::shared_ptr,osmosdr,source);
+OSMOSDR_SWIG_BLOCK_MAGIC2(boost::shared_ptr,osmosdr,sink);
+#else
+OSMOSDR_SWIG_BLOCK_MAGIC2(std::shared_ptr,osmosdr,source);
+OSMOSDR_SWIG_BLOCK_MAGIC2(std::shared_ptr,osmosdr,sink);
+#endif
 
 %{
 static const size_t ALL_MBOARDS = osmosdr::ALL_MBOARDS;

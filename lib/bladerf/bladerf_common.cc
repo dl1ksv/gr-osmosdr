@@ -38,7 +38,6 @@
 #include <boost/foreach.hpp>
 #include <boost/format.hpp>
 #include <boost/lexical_cast.hpp>
-#include <boost/weak_ptr.hpp>
 
 #include "bladerf_common.h"
 
@@ -51,7 +50,7 @@ static size_t const STREAM_TIMEOUT_MS = 3000;
 using namespace boost::assign;
 
 boost::mutex bladerf_common::_devs_mutex;
-std::list<boost::weak_ptr<struct bladerf>> bladerf_common::_devs;
+std::list<std::weak_ptr<struct bladerf>> bladerf_common::_devs;
 
 /* name for system-wide gain (which is not its own libbladeRF gain stage) */
 static const char *SYSTEM_GAIN_NAME = "system";
@@ -1109,7 +1108,7 @@ bladerf_sptr bladerf_common::open(std::string const &device_name)
   /* Add the device handle to our cache */
   bladerf_sptr dev = bladerf_sptr(raw_dev, bladerf_common::close);
 
-  _devs.push_back(static_cast<boost::weak_ptr<struct bladerf>>(dev));
+  _devs.push_back(static_cast<std::weak_ptr<struct bladerf>>(dev));
 
   return dev;
 }
@@ -1117,7 +1116,7 @@ bladerf_sptr bladerf_common::open(std::string const &device_name)
 void bladerf_common::close(void *dev)
 {
   boost::unique_lock<boost::mutex> lock(_devs_mutex);
-  std::list<boost::weak_ptr<struct bladerf>>::iterator it(_devs.begin());
+  std::list<std::weak_ptr<struct bladerf>>::iterator it(_devs.begin());
 
   /* Prune expired entries from device cache */
   while (it != _devs.end()) {
@@ -1137,7 +1136,7 @@ bladerf_sptr bladerf_common::get_cached_device(struct bladerf_devinfo devinfo)
   int status;
   struct bladerf_devinfo other_devinfo;
 
-  BOOST_FOREACH(boost::weak_ptr<struct bladerf> dev, _devs) {
+  BOOST_FOREACH(std::weak_ptr<struct bladerf> dev, _devs) {
     status = bladerf_get_devinfo(bladerf_sptr(dev).get(), &other_devinfo);
     if (status < 0) {
       BLADERF_THROW_STATUS(status, "Failed to get devinfo for cached device");

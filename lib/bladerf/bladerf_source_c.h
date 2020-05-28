@@ -40,7 +40,11 @@ class bladerf_source_c;
  *
  * As a convention, the _sptr suffix indicates a boost::shared_ptr
  */
+#ifdef BOOST_SHARED_PTR
 typedef boost::shared_ptr<bladerf_source_c> bladerf_source_c_sptr;
+#else
+typedef std::shared_ptr<bladerf_source_c> bladerf_source_c_sptr;
+#endif
 
 /*!
  * \brief Return a shared_ptr to a new instance of bladerf_source_c.

@@ -38,7 +38,11 @@ class source;
 class OSMOSDR_API source : virtual public gr::hier_block2
 {
 public:
+#ifdef BOOST_SHARED_PTR
   typedef boost::shared_ptr< source > sptr;
+#else
+  typedef std::shared_ptr< source > sptr;
+#endif
 
   /*!
    * \brief Return a shared_ptr to a new instance of source.

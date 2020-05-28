@@ -44,7 +44,11 @@ typedef struct rtlsdr_dev rtlsdr_dev_t;
  *
  * As a convention, the _sptr suffix indicates a boost::shared_ptr
  */
+#ifdef BOOST_SHARED_PTR
 typedef boost::shared_ptr<rtl_source_c> rtl_source_c_sptr;
+#else
+typedef std::shared_ptr<rtl_source_c> rtl_source_c_sptr;
+#endif
 
 /*!
  * \brief Return a shared_ptr to a new instance of rtl_source_c.

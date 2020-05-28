@@ -34,7 +34,11 @@
 
 class fcd_source_c;
 
+#ifdef BOOST_SHARED_PTR
 typedef boost::shared_ptr< fcd_source_c > fcd_source_c_sptr;
+#else
+typedef std::shared_ptr< fcd_source_c > fcd_source_c_sptr;
+#endif
 
 fcd_source_c_sptr make_fcd_source_c( const std::string & args = "" );
 

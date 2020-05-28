@@ -27,7 +27,11 @@
 
 class uhd_sink_c;
 
+#ifdef BOOST_SHARED_PTR
 typedef boost::shared_ptr< uhd_sink_c > uhd_sink_c_sptr;
+#else
+typedef std::shared_ptr< uhd_sink_c > uhd_sink_c_sptr;
+#endif
 
 uhd_sink_c_sptr make_uhd_sink_c(const std::string &args = "");
 
