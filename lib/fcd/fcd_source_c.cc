@@ -144,7 +144,7 @@ fcd_source_c::fcd_source_c(const std::string &args) :
 
   if ( FUNCUBE_V1 == _type )
   {
-    _src_v1 = gr::fcdproplus::fcd::make( dev_name );
+    _src_v1 = gr::funcube::fcd::make( dev_name );
     connect( _src_v1, 0, self(), 0 );
 
     set_gain( 20, "LNA" );
@@ -153,7 +153,7 @@ fcd_source_c::fcd_source_c(const std::string &args) :
 
   if ( FUNCUBE_V2 == _type )
   {
-    _src_v2 = gr::fcdproplus::fcdproplus::make( dev_name );
+    _src_v2 = gr::funcube::fcdpp::make( dev_name );
     connect( _src_v2, 0, self(), 0 );
 
     set_gain( 1, "LNA" );

@@ -1,8 +1,7 @@
 While primarily being developed for the OsmoSDR hardware, this block
 as well supports:
 
- * FUNcube Dongle through libgnuradio-fcd
- * FUNcube Dongle Pro+ through gr-fcdproplus
+ * FUNcube Dongle / Pro+ through gr-funcube
  * sysmocom OsmoSDR Devices through libosmosdr
  * RTL2832U based DVB-T dongles through librtlsdr
  * RTL-TCP spectrum server (see librtlsdr project)
@@ -39,7 +38,7 @@ please do a "make uninstall" first to properly remove the previous version.
 
 Building with cmake:
 
-git clone git://git.osmocom.org/gr-osmosdr
+git clone https://github.com/dl1ksv/gr-osmosdr.git
 cd gr-osmosdr/
 mkdir build
 cd build/
