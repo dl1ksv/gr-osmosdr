@@ -58,6 +58,10 @@
 #include <miri_source_c.h>
 #endif
 
+#ifdef ENABLE_IIO
+#include <plutosdr_source_c.h>
+#endif
+
 #ifdef ENABLE_SDRPLAY
 #include <sdrplay_source_c.h>
 #endif
@@ -168,6 +172,10 @@ devices_t device::find(const device_t &hint)
 #endif
 #ifdef ENABLE_MIRI
   BOOST_FOREACH( std::string dev, miri_source_c::get_devices() )
+    devices.push_back( device_t(dev) );
+#endif
+#ifdef ENABLE_IIO
+  BOOST_FOREACH( std::string dev, plutosdr_source_c::get_devices() )
     devices.push_back( device_t(dev) );
 #endif
 #ifdef ENABLE_SDRPLAY
