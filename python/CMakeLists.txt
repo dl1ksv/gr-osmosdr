@@ -24,7 +24,7 @@ include(GrPython)
 if(NOT PYTHONINTERP_FOUND)
     return()
 endif()
-
+add_subdirectory(bindings)
 ########################################################################
 # Install python sources
 ########################################################################
@@ -34,10 +34,3 @@ GR_PYTHON_INSTALL(
     DESTINATION ${GR_PYTHON_DIR}/osmosdr
 )
 
-########################################################################
-# Handle the unit tests
-########################################################################
-include(GrTest)
-
-set(GR_TEST_TARGET_DEPS gnuradio-osmosdr)
-set(GR_TEST_PYTHON_DIRS ${CMAKE_BINARY_DIR}/swig)

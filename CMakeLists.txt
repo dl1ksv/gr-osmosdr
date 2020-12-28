@@ -190,22 +190,19 @@ find_package(Doxygen)
     ##########
 
 find_package(PythonLibs 3)
-find_package(SWIG)
-
-if(SWIG_FOUND)
-    message(STATUS "Minimum SWIG version required is 1.3.31")
-    set(SWIG_VERSION_CHECK FALSE)
-    if("${SWIG_VERSION}" VERSION_GREATER "1.3.30")
-        set(SWIG_VERSION_CHECK TRUE)
-    endif()
-endif(SWIG_FOUND)
 
 GR_REGISTER_COMPONENT("Python support" ENABLE_PYTHON
     PYTHONLIBS_FOUND
-    SWIG_FOUND
-    SWIG_VERSION_CHECK
 )
+########################################################################
+# PyBind11 Related
+########################################################################
 
+find_package(pybind11 REQUIRED)
+execute_process(
+    COMMAND "${PYTHON_EXECUTABLE}" -c
+    "try:\n import numpy\n import os\n inc_path = numpy.get_include()\n if os.path.exists(os.path.join(inc_path, 'numpy', 'arrayobject.h')):\n  print(inc_path, end='')\nexcept:\n pass"
+    OUTPUT_VARIABLE PYTHON_NUMPY_INCLUDE_DIR)
 ########################################################################
 # Install directories
 ########################################################################
@@ -271,7 +268,6 @@ add_custom_target(uninstall
 add_subdirectory(include/osmosdr)
 add_subdirectory(lib)
 if(ENABLE_PYTHON)
-    add_subdirectory(swig)
     add_subdirectory(python)
     add_subdirectory(grc)
     add_subdirectory(apps)

@@ -1,1 +1,4 @@
 build/
+docs/doxygen/doxyxml/generated/__pycache__/
+docs/doxygen/doxyxml/__pycache__/
+python/bindings/failed_conversions.txt
