@@ -21,8 +21,8 @@ namespace py = pybind11;
  * Please do not delete
  **************************************/
 // BINDING_FUNCTION_PROTOTYPES(
-//    void bind_device(py::module& m);
     void bind_ranges(py::module& m);
+    void bind_sink(py::module& m);
     void bind_source(py::module& m);
     void bind_time_spec(py::module& m);
 // ) END BINDING_FUNCTION_PROTOTYPES    
@@ -53,8 +53,8 @@ PYBIND11_MODULE(osmosdr_python, m)
      * Please do not delete
      **************************************/
     // BINDING_FUNCTION_CALLS(
-//    bind_device(m);
     bind_ranges(m);
+    bind_sink(m);
     bind_source(m);
     bind_time_spec(m);
     // ) END BINDING_FUNCTION_CALLS

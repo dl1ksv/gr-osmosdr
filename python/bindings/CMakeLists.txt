@@ -19,6 +19,7 @@ include(GrPybind)
 
 list(APPEND osmosdr_python_files
     ranges_python.cc
+    sink_python.cc
     source_python.cc
     time_spec_python.cc
     python_bindings.cc

@@ -23,8 +23,8 @@
 #include <osmosdr/source.h>
 
 #ifdef HAVE_IQBALANCE
-#include <gnuradio/iqbalance/optimize_c.h>
-#include <gnuradio/iqbalance/fix_cc.h>
+#include <iqbalance/optimize_c.h>
+#include <iqbalance/fix_cc.h>
 #endif
 
 #include <source_iface.h>
