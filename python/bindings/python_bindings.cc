@@ -25,6 +25,7 @@ namespace py = pybind11;
     void bind_sink(py::module& m);
     void bind_source(py::module& m);
     void bind_time_spec(py::module& m);
+    void bind_device(py::module& m);
 // ) END BINDING_FUNCTION_PROTOTYPES    
 
 
@@ -57,5 +58,6 @@ PYBIND11_MODULE(osmosdr_python, m)
     bind_sink(m);
     bind_source(m);
     bind_time_spec(m);
+    bind_device(m);
     // ) END BINDING_FUNCTION_CALLS
 }

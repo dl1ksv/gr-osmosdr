@@ -7,7 +7,7 @@
  *
  */
 #include "pydoc_macros.h"
-#define D(...) DOC(gr,osmosdr, __VA_ARGS__ )
+#define D(...) DOC(osmosdr, __VA_ARGS__ )
 /*
   This file contains placeholders for docstrings for the Python bindings.
   Do not edit! These were automatically extracted during the binding process
@@ -16,57 +16,57 @@
 
 
  
- static const char *__doc_gr_osmosdr_range_t = R"doc()doc";
+ static const char *__doc_osmosdr_range_t = R"doc()doc";
 
 
- static const char *__doc_gr_osmosdr_range_t_range_t_0 = R"doc()doc";
+ static const char *__doc_osmosdr_range_t_range_t_0 = R"doc()doc";
 
 
- static const char *__doc_gr_osmosdr_range_t_range_t_1 = R"doc()doc";
+ static const char *__doc_osmosdr_range_t_range_t_1 = R"doc()doc";
 
 
- static const char *__doc_gr_osmosdr_range_t_range_t_2 = R"doc()doc";
+ static const char *__doc_osmosdr_range_t_range_t_2 = R"doc()doc";
 
 
- static const char *__doc_gr_osmosdr_range_t_start = R"doc()doc";
+ static const char *__doc_osmosdr_range_t_start = R"doc()doc";
 
 
- static const char *__doc_gr_osmosdr_range_t_stop = R"doc()doc";
+ static const char *__doc_osmosdr_range_t_stop = R"doc()doc";
 
 
- static const char *__doc_gr_osmosdr_range_t_step = R"doc()doc";
+ static const char *__doc_osmosdr_range_t_step = R"doc()doc";
 
 
- static const char *__doc_gr_osmosdr_range_t_to_pp_string = R"doc()doc";
+ static const char *__doc_osmosdr_range_t_to_pp_string = R"doc()doc";
 
  
- static const char *__doc_gr_osmosdr_meta_range_t = R"doc()doc";
+ static const char *__doc_osmosdr_meta_range_t = R"doc()doc";
 
 
- static const char *__doc_gr_osmosdr_meta_range_t_meta_range_t_0 = R"doc()doc";
+ static const char *__doc_osmosdr_meta_range_t_meta_range_t_0 = R"doc()doc";
 
 
- static const char *__doc_gr_osmosdr_meta_range_t_meta_range_t_1 = R"doc()doc";
+ static const char *__doc_osmosdr_meta_range_t_meta_range_t_1 = R"doc()doc";
 
 
- static const char *__doc_gr_osmosdr_meta_range_t_meta_range_t_2 = R"doc()doc";
+ static const char *__doc_osmosdr_meta_range_t_meta_range_t_2 = R"doc()doc";
 
 
- static const char *__doc_gr_osmosdr_meta_range_t_start = R"doc()doc";
+ static const char *__doc_osmosdr_meta_range_t_start = R"doc()doc";
 
 
- static const char *__doc_gr_osmosdr_meta_range_t_stop = R"doc()doc";
+ static const char *__doc_osmosdr_meta_range_t_stop = R"doc()doc";
 
 
- static const char *__doc_gr_osmosdr_meta_range_t_step = R"doc()doc";
+ static const char *__doc_osmosdr_meta_range_t_step = R"doc()doc";
 
 
- static const char *__doc_gr_osmosdr_meta_range_t_clip = R"doc()doc";
+ static const char *__doc_osmosdr_meta_range_t_clip = R"doc()doc";
 
 
- static const char *__doc_gr_osmosdr_meta_range_t_values = R"doc()doc";
+ static const char *__doc_osmosdr_meta_range_t_values = R"doc()doc";
 
 
- static const char *__doc_gr_osmosdr_meta_range_t_to_pp_string = R"doc()doc";
+ static const char *__doc_osmosdr_meta_range_t_to_pp_string = R"doc()doc";
 
   

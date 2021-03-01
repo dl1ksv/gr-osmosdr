@@ -20,7 +20,6 @@
 ########################################################################
 # This file included, use CMake directory variables
 ########################################################################
-message(STATUS "Processing pluto sdr +++++++ indclude ${CMAKE_CURRENT_SOURCE_DIR} *** ${GNURADIO_IIO_INCLUDE_DIRS} *** ${IIO_INCLUDE_DIRS} +++++")
 
 target_include_directories(gnuradio-osmosdr PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}

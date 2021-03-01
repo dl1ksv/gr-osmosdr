@@ -40,88 +40,89 @@ set(CMAKE_BUILD_TYPE ${CMAKE_BUILD_TYPE} CACHE STRING "")
 # GNURadio setup
 ########################################################################
 list(INSERT CMAKE_MODULE_PATH 0 ${CMAKE_SOURCE_DIR}/cmake/Modules)
-
 # Find GNURadio (pmt and runtime are core, always included)
-find_package(Gnuradio "3.8" REQUIRED COMPONENTS blocks fft filter)
+find_package(Gnuradio "3.9" REQUIRED COMPONENTS blocks fft filter)
 
 # Set the version information here
-set(VERSION_MAJOR 0)
-set(VERSION_API   2)
-set(VERSION_ABI   0)
+set(VERSION_MAJOR 1)
+set(VERSION_API   3)
+set(VERSION_ABI   9)
 set(VERSION_PATCH 0)
 include(GrVersion) #setup version info
-
-if(Gnuradio_VERSION VERSION_LESS "3.9")
-    add_definitions(-DBOOST_SHARED_PTR)
-endif()
 
 ########################################################################
 # Compiler specific setup
 ########################################################################
 
-if((CMAKE_CXX_COMPILER_ID MATCHES "Clang" OR
-    CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
-    AND NOT WIN32)
-    #http://gcc.gnu.org/wiki/Visibility
-    add_definitions(-fvisibility=hidden)
-    add_definitions(-fvisibility-inlines-hidden)
-endif()
+include(GrMiscUtils) #compiler flag check
 
-if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
-    set(CMAKE_CXX_STANDARD 11)
-elseif(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-    set(CMAKE_CXX_STANDARD 11)
-elseif(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
-    set(CMAKE_CXX_STANDARD 11)
-else()
-    message(WARNING "C++ standard could not be set because compiler is not GNU, Clang or MSVC.")
-endif()
-
-# Misc options
-if(CMAKE_CXX_COMPILER_ID MATCHES "Clang" OR
-    CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
-    add_definitions(-Wall)
-    add_definitions(-Wextra)
-    add_definitions(-Wno-unused-parameter)
-    add_definitions(-Wsign-compare)
-    #add_definitions(-Wconversion)
-    #add_definitions(-pedantic)
-    #add_definitions(-ansi)
-endif()
-
-# SIMD
-if(CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64|AMD64|x86")
-    set(USE_SIMD "SSE2" CACHE STRING "Use SIMD instructions")
-else()
-    set(USE_SIMD "no" CACHE STRING "Use SIMD instructions")
-endif()
-set(USE_SIMD_VALUES "no" "SSE2" "AVX")
-set_property(CACHE USE_SIMD PROPERTY STRINGS ${USE_SIMD_VALUES})
-list(FIND USE_SIMD_VALUES ${USE_SIMD} USE_SIMD_INDEX)
-if(${USE_SIMD_INDEX} EQUAL -1)
-    message(FATAL_ERROR "Option ${USE_SIMD} not supported, valid entries are ${USE_SIMD_VALUES}")
-endif()
+include(TestBigEndian)
+TEST_BIG_ENDIAN(GR_IS_BIG_ENDIAN)
+if(GR_IS_BIG_ENDIAN)
+    add_definitions(-DGR_IS_BIG_ENDIAN)
+endif(GR_IS_BIG_ENDIAN)
 
 if(CMAKE_CXX_COMPILER_ID MATCHES "Clang" OR
-    CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
-    if(USE_SIMD MATCHES SSE2)
-        add_definitions(-msse2)
-        add_definitions(-DUSE_SSE2)
-    endif()
-    if(USE_SIMD MATCHES AVX)
-        add_definitions(-march=native)
-        add_definitions(-DUSE_AVX)
-    endif()
-elseif(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
-    if(USE_SIMD MATCHES SSE2)
-        add_definitions(/arch:SSE2)
-        add_definitions(-DUSE_SSE2)
-    endif()
-    if(USE_SIMD MATCHES AVX)
-        add_definitions(/arch:AVX)
-        add_definitions(-DUSE_AVX)
-    endif()
-endif()
+   CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+    if(NOT WIN32)
+        #http://gcc.gnu.org/wiki/Visibility
+        GR_ADD_CXX_COMPILER_FLAG_IF_AVAILABLE(-fvisibility=hidden HAVE_VISIBILITY_HIDDEN)
+    endif(NOT WIN32)
+    GR_ADD_CXX_COMPILER_FLAG_IF_AVAILABLE(-Wsign-compare HAVE_WARN_SIGN_COMPARE)
+    GR_ADD_CXX_COMPILER_FLAG_IF_AVAILABLE(-Wall HAVE_WARN_ALL)
+    GR_ADD_CXX_COMPILER_FLAG_IF_AVAILABLE(-Wno-uninitialized HAVE_WARN_NO_UNINITIALIZED)
+endif(CMAKE_CXX_COMPILER_ID MATCHES "Clang" OR
+      CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+
+if(MSVC)
+    include_directories(${CMAKE_SOURCE_DIR}/cmake/msvc) #missing headers
+    add_definitions(-D_USE_MATH_DEFINES) #enables math constants on all supported versions of MSVC
+    add_definitions(-D_WIN32_WINNT=0x0502) #Minimum version: "Windows Server 2003 with SP1, Windows XP with SP2"
+    add_definitions(-DNOMINMAX) #disables stupidity and enables std::min and std::max
+    add_definitions( #stop all kinds of compatibility warnings
+        -D_SCL_SECURE_NO_WARNINGS
+        -D_CRT_SECURE_NO_WARNINGS
+        -D_CRT_SECURE_NO_DEPRECATE
+        -D_CRT_NONSTDC_NO_DEPRECATE
+    )
+    add_definitions(-DHAVE_CONFIG_H)
+    add_compile_options(/MP) #build with multiple processors
+    add_compile_options(/bigobj) #allow for larger object files
+endif(MSVC)
+
+if(WIN32)
+    add_definitions(-D_USE_MATH_DEFINES)
+    if (CMAKE_SIZEOF_VOID_P EQUAL 8)
+        add_definitions(-DMS_WIN64)
+    endif(CMAKE_SIZEOF_VOID_P EQUAL 8)
+endif(WIN32)
+
+# Record Compiler Info for record
+STRING(TOUPPER ${CMAKE_BUILD_TYPE} GRCBTU)
+SET(COMPILER_INFO "")
+IF(MSVC)
+    IF(MSVC_VERSION LESS "${MSVC_MIN_VERSION}")
+        MESSAGE(FATAL_ERROR "MSVC Versions < minimum version ${MSVC_MIN_VERSION}")
+    ENDIF()
+    SET(cmake_c_compiler_version ${MSVC_VERSION})
+    SET(cmake_cxx_compiler_version ${MSVC_VERSION})
+ELSE()
+    execute_process(COMMAND ${CMAKE_C_COMPILER} --version
+            OUTPUT_VARIABLE cmake_c_compiler_version)
+    execute_process(COMMAND ${CMAKE_CXX_COMPILER} --version
+            OUTPUT_VARIABLE cmake_cxx_compiler_version)
+ENDIF(MSVC)
+SET(COMPILER_INFO "${CMAKE_C_COMPILER}:::${CMAKE_C_FLAGS_${GRCBTU}} ${CMAKE_C_FLAGS}\n${CMAKE_CXX_COMPILER}:::${CMAKE_CXX_FLAGS_${GRCBTU}} ${CMAKE_CXX_FLAGS}\n" )
+
+# Convert to a C string to compile and display properly
+string(STRIP "${cmake_c_compiler_version}" cmake_c_compiler_version)
+string(STRIP "${cmake_cxx_compiler_version}" cmake_cxx_compiler_version)
+string(STRIP ${COMPILER_INFO} COMPILER_INFO)
+MESSAGE(STATUS "Compiler Version: ${cmake_c_compiler_version}")
+MESSAGE(STATUS "Compiler Flags: ${COMPILER_INFO}")
+string(REPLACE "\n" " \\n" cmake_c_compiler_version ${cmake_c_compiler_version})
+string(REPLACE "\n" " \\n" cmake_cxx_compiler_version ${cmake_cxx_compiler_version})
+string(REPLACE "\n" " \\n" COMPILER_INFO ${COMPILER_INFO})
 
 ########################################################################
 # Find boost
@@ -131,7 +132,20 @@ find_package(Boost "1.65" REQUIRED chrono thread system)
 if(NOT Boost_FOUND)
     message(FATAL_ERROR "Boost required to compile osmosdr")
 endif()
+########################################################################
+# Install directories
+########################################################################
+include(GrPlatform) #define LIB_SUFFIX
 
+if(NOT CMAKE_MODULES_DIR)
+    set(CMAKE_MODULES_DIR lib${LIB_SUFFIX}/cmake)
+endif(NOT CMAKE_MODULES_DIR)
+set(GR_INCLUDE_DIR      include)
+set(GR_CMAKE_DIR        ${CMAKE_MODULES_DIR}/osmosdr)
+set(GR_PKG_DATA_DIR     ${GR_DATA_DIR}/${CMAKE_PROJECT_NAME})
+set(GR_PKG_DOC_DIR      ${GR_DOC_DIR}/${CMAKE_PROJECT_NAME})
+set(GR_PKG_CONF_DIR     ${GR_CONF_DIR}/${CMAKE_PROJECT_NAME}/conf.d)
+set(GR_PKG_LIBEXEC_DIR  ${GR_LIBEXEC_DIR}/${CMAKE_PROJECT_NAME})
 ########################################################################
 # Find build dependencies and setup options
 ########################################################################
@@ -152,8 +166,8 @@ find_package(gnuradio-blocks PATHS ${Gnuradio_DIR})
 message(STATUS " Found GNURadio-Blocks: ${gnuradio-blocks_FOUND}")
 
 message(STATUS "Searching for IQ Balance...")
-find_package(gnuradio-iqbalance PATHS ${Gnuradio_DIR})
-message (STATUS " Found IQ Balance: ${gnuradio-iqbalance_FOUND}")
+find_package(iqbalance PATHS ${Gnuradio_DIR})
+message (STATUS " Found IQ Balance: ${iqbalance_FOUND}")
 
 message(STATUS "Searching for UHD Drivers...")
 find_package(UHD)
@@ -170,9 +184,7 @@ message (STATUS " Found Volk: ${Volk_FOUND}")
     # Hardware drivers
     ####################
 
-find_package(LibOsmoSDR)
 find_package(LibRTLSDR)
-find_package(LibMiriSDR)
 if(ENABLE_NONFREE)
     find_package(LibSDRplay)
 endif(ENABLE_NONFREE)
@@ -190,34 +202,18 @@ find_package(Doxygen)
     ##########
 
 find_package(PythonLibs 3)
+find_package(pybind11)
 
 GR_REGISTER_COMPONENT("Python support" ENABLE_PYTHON
     PYTHONLIBS_FOUND
+    pybind11_FOUND
 )
-########################################################################
-# PyBind11 Related
-########################################################################
 
-find_package(pybind11 REQUIRED)
-execute_process(
-    COMMAND "${PYTHON_EXECUTABLE}" -c
-    "try:\n import numpy\n import os\n inc_path = numpy.get_include()\n if os.path.exists(os.path.join(inc_path, 'numpy', 'arrayobject.h')):\n  print(inc_path, end='')\nexcept:\n pass"
-    OUTPUT_VARIABLE PYTHON_NUMPY_INCLUDE_DIR)
 ########################################################################
 # Install directories
 ########################################################################
-include(GrPlatform) #define LIB_SUFFIX
 
-if(NOT CMAKE_MODULES_DIR)
-    set(CMAKE_MODULES_DIR lib${LIB_SUFFIX}/cmake)
-endif(NOT CMAKE_MODULES_DIR)
 
-set(GR_INCLUDE_DIR      include)
-set(GR_CMAKE_DIR        ${CMAKE_MODULES_DIR}/osmosdr)
-set(GR_PKG_DATA_DIR     ${GR_DATA_DIR}/${CMAKE_PROJECT_NAME})
-set(GR_PKG_DOC_DIR      ${GR_DOC_DIR}/${CMAKE_PROJECT_NAME})
-set(GR_PKG_CONF_DIR     ${GR_CONF_DIR}/${CMAKE_PROJECT_NAME}/conf.d)
-set(GR_PKG_LIBEXEC_DIR  ${GR_LIBEXEC_DIR}/${CMAKE_PROJECT_NAME})
 
 ########################################################################
 # On Apple only, set install name and use rpath correctly, if not already set

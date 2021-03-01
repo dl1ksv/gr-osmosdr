@@ -120,10 +120,10 @@ set_source_files_properties(
 ########################################################################
 # Setup IQBalance component
 ########################################################################
-GR_REGISTER_COMPONENT("Osmocom IQ Imbalance Correction" ENABLE_IQBALANCE gnuradio-iqbalance_FOUND)
+GR_REGISTER_COMPONENT("Osmocom IQ Imbalance Correction" ENABLE_IQBALANCE iqbalance_FOUND)
 if(ENABLE_IQBALANCE)
     add_definitions(-DHAVE_IQBALANCE=1)
-    target_include_directories(gnuradio-osmosdr PRIVATE ${gnuradio-iqbalance_INCLUDE_DIRS})
+    target_include_directories(gnuradio-osmosdr PRIVATE ${iqbalance_INCLUDE_DIRS})
     target_link_libraries(gnuradio-osmosdr gnuradio::gnuradio-iqbalance)
 endif(ENABLE_IQBALANCE)
 

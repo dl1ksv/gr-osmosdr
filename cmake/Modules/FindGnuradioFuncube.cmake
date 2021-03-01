@@ -1,15 +1,13 @@
 if(NOT GNURADIO_FUNCUBE_FOUND)
-  pkg_check_modules (GNURADIO_FUNCUBE_PKG libgnuradio-funcube)
+message(STATUS "Checking for module 'gnuradio-funcube'")
   find_path(GNURADIO_FUNCUBE_INCLUDE_DIRS NAMES funcube/api.h
     PATHS
     ${GNURADIO_FUNCUBE_PKG_INCLUDE_DIRS}
     /usr/include
     /usr/local/include
   )
-
   find_library(GNURADIO_FUNCUBE_LIBRARIES NAMES gnuradio-funcube
     PATHS
-    ${GNURADIO_FUNCUBE_PKG_LIBRARY_DIRS}
     /usr/lib
     /usr/local/lib
   )
