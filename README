@@ -1,11 +1,10 @@
 While primarily being developed for the OsmoSDR hardware, this block
 as well supports:
 
- * FUNcube Dongle / Pro+ through gr-funcube
- * sysmocom OsmoSDR Devices through libosmosdr
+ * FUNcube Dongle / Pro and Pro+ through gr-funcube
+ * Adalm-Pluto ( source only ) through gr-iio
  * RTL2832U based DVB-T dongles through librtlsdr
  * RTL-TCP spectrum server (see librtlsdr project)
- * MSi2500 based DVB-T dongles through libmirisdr
  * SDRplay RSP through SDRplay API library
  * gnuradio .cfile input through libgnuradio-blocks
  * RFSPACE SDR-IQ, SDR-IP, NetSDR (incl. X2 option)
@@ -26,7 +25,7 @@ at http://sdr.osmocom.org/trac/wiki/GrOsmoSDR
 
 For the impatient :) a short excerpt:
 
-The Gnu Radio block requires a recent gnuradio (>= v3.7) to be installed.
+This version requires gnuradio 3.9 with pybind. Swig is no longer needed.
 
 Before building the block you have to make sure that all the dependencies
 (see list of supported devices above) you are intend to work with are
